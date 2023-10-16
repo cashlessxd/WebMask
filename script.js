@@ -1,15 +1,26 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let video = document.getElementById("video");
-    let mediaDevices = navigator.mediaDevices;
+    const maskName = document.getElementById("maskName");
+    const changeMaskButton = document.getElementById("changeMask");
+    const video = document.getElementById("video");
+    const mediaDevices = navigator.mediaDevices;
 
-    let canvas = document.getElementById("canvas");
-    let ctx = canvas.getContext("2d");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
 
     let model;
 
     let selectedImage = 0;
     const images = [
         {
+            name: "Emoji",
+            src: "img/masks/surprised_emoji.png",
+            sizeOffsetX: 80,
+            sizeOffsetY: 160,
+            posOffsetX: 40,
+            posOffsetY: 95,
+        },
+        {
+            name: "Batman",
             src: "img/masks/batman.png",
             sizeOffsetX: 80,
             sizeOffsetY: 150,
@@ -17,11 +28,20 @@ document.addEventListener("DOMContentLoaded", () => {
             posOffsetY: 150,
         },
         {
-            src: "img/masks/surprised_emoji.png",
-            sizeOffsetX: 80,
+            name: "Martin",
+            src: "img/masks/martin.png",
+            sizeOffsetX: 350,
             sizeOffsetY: 150,
-            posOffsetX: 40,
+            posOffsetX: 175,
             posOffsetY: 100,
+        },
+        {
+            name: "Brodi",
+            src: "img/masks/brodi.png",
+            sizeOffsetX: 350,
+            sizeOffsetY: 200,
+            posOffsetX: 175,
+            posOffsetY: 120,
         }
     ];
 
@@ -62,8 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    setUpVideo();
-
     video.addEventListener("loadedmetadata", async () => {
         video.play();
         model = await blazeface.load();
@@ -75,5 +93,17 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log(e);
         }
     });
+
+    changeMaskButton.addEventListener("click", () => {
+        if (selectedImage < images.length - 1) {
+            selectedImage++;
+        } else {
+            selectedImage = 0;
+        }
+        maskName.innerText = images[selectedImage].name;
+    });
+
+    setUpVideo();
+    maskName.innerText = images[selectedImage].name;
 });
 
