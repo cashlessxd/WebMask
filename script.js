@@ -119,11 +119,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         break;
                     case 2:
                         // nose
-                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.05), 0, Math.PI * 2, "red");
+                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.05), 0, Math.PI * 2, "orange");
                         break;
                     case 3:
                         // mouth
-                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.3), (rightEyeY - leftEyeY) * 0.02, (rightEyeY - leftEyeY) * 0.02 + Math.PI, "black");
+                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.2), (rightEyeY - leftEyeY) * 0.02, (rightEyeY - leftEyeY) * 0.02 + Math.PI, "black");
                         break;
                     case 4:
                         // left ear
