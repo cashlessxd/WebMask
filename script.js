@@ -48,6 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
         },
     ];
 
+    maskName.innerText = masks[selectedMask].name;
+
     const setUpVideo = () => {
         mediaDevices
             .getUserMedia({
@@ -62,11 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const detectFaces = async () => {
         const faces = await model.estimateFaces(video, false);
-        if (isExperimentalModeEnabled) {
-            experimentalMask(faces);
-        } else {
-            mask(faces);
-        }
+        isExperimentalModeEnabled ? experimentalMask(faces) : mask(faces);
     }
 
 
@@ -92,28 +90,34 @@ document.addEventListener("DOMContentLoaded", () => {
     const experimentalMask = (faces) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         faces.forEach((face) => {
-            let faceX = face.topLeft[0] + ((face.bottomRight[0] - face.topLeft[0]) / 2);
-            let faceY = face.topLeft[1] + ((face.bottomRight[1] - face.topLeft[1]) / 2);
-            drawCircle(faceX, faceY, 120, 0, Math.PI * 2, false, "yellow");
+            let faceWidth = face.bottomRight[0] - face.topLeft[0];
+            let faceHeight = face.bottomRight[1] - face.topLeft[1];
+            let faceX = face.topLeft[0] + (faceWidth / 2);
+            let faceY = face.topLeft[1] + (faceHeight / 2);
+            let leftEyeY = 0;
+            let rightEyeY = 0;
+            drawCircle(faceX, faceY, (faceWidth * 0.5), 0, Math.PI * 2, "yellow");
             face.landmarks.forEach((landmark, i) => {
                 switch(i) {
                     case 0:
                         // left eye
-                        drawCircle(landmark[0], landmark[1], 30, 0, Math.PI * 2, false, "white");
-                        drawCircle(landmark[0], landmark[1], 20, 0, Math.PI * 2, false, "black");
+                        drawCircle(landmark[0], landmark[1], (faceWidth * 0.15), 0, Math.PI * 2, "white");
+                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) + 20, landmark[1] + ((landmark[1] - faceY)) + 40, (faceWidth * 0.05), 0, Math.PI * 2, "black");
+                        leftEyeY = landmark[1];
                         break;
                     case 1:
                         // right eye
-                        drawCircle(landmark[0], landmark[1], 30, 0, Math.PI * 2, false, "white");
-                        drawCircle(landmark[0], landmark[1], 20, 0, Math.PI * 2, false, "black");
+                        drawCircle(landmark[0], landmark[1], (faceWidth * 0.15), 0, Math.PI * 2, "white");
+                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) - 20, landmark[1] + ((landmark[1] - faceY)) + 40, (faceWidth * 0.05), 0, Math.PI * 2, "black");
+                        rightEyeY = landmark[1];
                         break;
                     case 2:
                         // nose
-                        drawCircle(landmark[0], landmark[1] - 20, 20, 0, Math.PI * 2, false, "red");
+                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.05), 0, Math.PI * 2, "red");
                         break;
                     case 3:
                         // mouth
-                        drawCircle(landmark[0], landmark[1] - 20, 70, 0, Math.PI, false, "black");
+                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.3), (rightEyeY - leftEyeY) * 0.02, (rightEyeY - leftEyeY) * 0.02 + Math.PI, "black");
                         break;
                     case 4:
                         // left ear
@@ -126,9 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const drawCircle = (x, y, radius, startAngle, endAngle, counterclockwise, color) => {
+    const drawCircle = (x, y, radius, startAngle, endAngle, color) => {
         ctx.beginPath();
-        ctx.arc(x, y , radius, startAngle, endAngle, counterclockwise);
+        ctx.arc(x, y , radius, startAngle, endAngle);
         ctx.closePath();
         ctx.fillStyle = color;
         ctx.fill();
@@ -147,26 +151,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     changeMaskButton.addEventListener("click", () => {
-        if (selectedMask < masks.length - 1) {
-            selectedMask++;
-        } else {
-            selectedMask = 0;
-        }
+        selectedMask < masks.length - 1 ? selectedMask++ : selectedMask = 0;
         maskName.innerText = masks[selectedMask].name;
     });
 
     toggleExperimentalModeButton.addEventListener("click", () => {
-        if (isExperimentalModeEnabled) {
-            maskName.innerText = masks[selectedMask].name;
-            changeMaskButton.removeAttribute("disabled");
-        } else {
-            maskName.innerText = "Experimental Mode";
-            changeMaskButton.setAttribute("disabled", "false");
-        }
         isExperimentalModeEnabled = !isExperimentalModeEnabled;
+        changeMaskButton.disabled = isExperimentalModeEnabled;
+        maskName.innerText = isExperimentalModeEnabled ? "Experimental Mode" : masks[selectedMask].name;
     });
 
     setUpVideo();
-    maskName.innerText = masks[selectedMask].name;
 });
 
