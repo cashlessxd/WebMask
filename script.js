@@ -1,15 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
     const maskName = document.getElementById("maskName");
     const changeMaskButton = document.getElementById("changeMask");
+    const toggleStartStopButton = document.getElementById("toggleStartStop");
     const toggleExperimentalModeButton = document.getElementById("toggleExperimentalMode");
+    const makeScreenshotButton = document.getElementById("makeScreenshot");
     const video = document.getElementById("video");
-    const mediaDevices = navigator.mediaDevices;
-
     const canvas = document.getElementById("canvas");
+
+    const mediaDevices = navigator.mediaDevices;
     const ctx = canvas.getContext("2d");
 
     let model;
 
+    let isRunning = false;
     let selectedMask = 0;
     let isExperimentalModeEnabled = false;
 
@@ -48,8 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
         },
     ];
 
-    maskName.innerText = masks[selectedMask].name;
-
     const setUpVideo = () => {
         mediaDevices
             .getUserMedia({
@@ -67,15 +68,17 @@ document.addEventListener("DOMContentLoaded", () => {
         isExperimentalModeEnabled ? experimentalMask(faces) : mask(faces);
     }
 
-
     const mask = (faces) => {
         let image = new Image();
         image.src = masks[selectedMask].src;
-        image.onload = () => {
+
+        if (isRunning) image.onload = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height)
+
             faces.forEach((face) => {
                 let faceWidth = face.bottomRight[0] - face.topLeft[0];
                 let faceHeight = face.bottomRight[1] - face.topLeft[1];
+
                 ctx.drawImage(
                     image,
                     face.topLeft[0] - masks[selectedMask].posOffsetX,
@@ -84,11 +87,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     faceHeight + masks[selectedMask].sizeOffsetY
                 );
             });
-        }
+        };
     }
 
     const experimentalMask = (faces) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
+
         faces.forEach((face) => {
             let faceWidth = face.bottomRight[0] - face.topLeft[0];
             let faceHeight = face.bottomRight[1] - face.topLeft[1];
@@ -96,19 +100,21 @@ document.addEventListener("DOMContentLoaded", () => {
             let faceY = face.topLeft[1] + (faceHeight / 2);
             let leftEyeY = 0;
             let rightEyeY = 0;
+
             drawCircle(faceX, faceY, (faceWidth * 0.5), 0, Math.PI * 2, "yellow");
+
             face.landmarks.forEach((landmark, i) => {
                 switch(i) {
                     case 0:
                         // left eye
                         drawCircle(landmark[0], landmark[1], (faceWidth * 0.15), 0, Math.PI * 2, "white");
-                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) + 20, landmark[1] + ((landmark[1] - faceY)) + 40, (faceWidth * 0.05), 0, Math.PI * 2, "black");
+                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) + (faceWidth * 0.1), landmark[1] + ((landmark[1] - faceY)) + (faceWidth * 0.15), (faceWidth * 0.05), 0, Math.PI * 2, "black");
                         leftEyeY = landmark[1];
                         break;
                     case 1:
                         // right eye
                         drawCircle(landmark[0], landmark[1], (faceWidth * 0.15), 0, Math.PI * 2, "white");
-                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) - 20, landmark[1] + ((landmark[1] - faceY)) + 40, (faceWidth * 0.05), 0, Math.PI * 2, "black");
+                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) - (faceWidth * 0.1), landmark[1] + ((landmark[1] - faceY)) + (faceWidth * 0.15), (faceWidth * 0.05), 0, Math.PI * 2, "black");
                         rightEyeY = landmark[1];
                         break;
                     case 2:
@@ -141,13 +147,25 @@ document.addEventListener("DOMContentLoaded", () => {
     video.addEventListener("loadedmetadata", async () => {
         video.play();
         model = await blazeface.load();
-        try {
-            while (true) {
-                await detectFaces();
-            }
-        } catch (e) {
-            console.log(e);
+    });
+
+    toggleStartStopButton.addEventListener("click", async () => {
+        isRunning = !isRunning;
+
+        if (isRunning) {
+            toggleStartStopButton.innerText = "Stop"
+            maskName.innerText = isExperimentalModeEnabled ? "Experimental Mode" : masks[selectedMask].name;
+        } else {
+            toggleStartStopButton.innerText = "Start";
+            maskName.innerText = "[Stopped]";
         }
+        changeMaskButton.disabled = !isRunning || isExperimentalModeEnabled;
+        toggleExperimentalModeButton.disabled = !isRunning;
+
+        while (isRunning) {
+            await detectFaces();
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
     });
 
     changeMaskButton.addEventListener("click", () => {
@@ -157,10 +175,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     toggleExperimentalModeButton.addEventListener("click", () => {
         isExperimentalModeEnabled = !isExperimentalModeEnabled;
+
         changeMaskButton.disabled = isExperimentalModeEnabled;
         maskName.innerText = isExperimentalModeEnabled ? "Experimental Mode" : masks[selectedMask].name;
     });
 
+    makeScreenshotButton.addEventListener("click", async () => {
+        const screenshotCanvas = document.createElement("canvas");
+        screenshotCanvas.width = canvas.width;
+        screenshotCanvas.height = canvas.height;
+
+        const screenshotCtx = screenshotCanvas.getContext("2d");
+        screenshotCtx.drawImage(video, 0, 0);
+        screenshotCtx.drawImage(canvas, 0, 0);
+
+        const img = new Image();
+        const dataURL = screenshotCanvas.toDataURL("image/jpg");
+        img.src = dataURL;
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = dataURL;
+        downloadLink.download = "screenshot.jpg";
+        downloadLink.click();
+    });
+
     setUpVideo();
 });
-

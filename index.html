@@ -21,7 +21,7 @@
             </div>
         </nav>
         <div class="text-center pt-5">
-            <h1>WebMasks</h1>
+            <h1>WebMasks &#128526;</h1>
         </div>
         <div class="videocanvas text-center pt-5">
             <div class="layer1">
@@ -32,9 +32,13 @@
             </div>
         </div>
         <div class="pt-3 text-center">
-            <h2 id="maskName"></h2>
-            <button type="button" class="btn btn-dark" id="changeMask">Change Mask</button>
-            <button type="button" class="btn btn-danger" id="toggleExperimentalMode">Toggle Experimental Mode</button>
+            <h2 id="maskName">[Click Start]</h2>
+            <button type="button" class="btn btn-success" id="toggleStartStop">Start</button>
+            <button type="button" class="btn btn-dark" id="changeMask" disabled>Change Mask</button>
+            <button type="button" class="btn btn-danger" id="toggleExperimentalMode" disabled>Toggle Experimental Mode</button>
+        </div>
+        <div class="pt-3 text-center">
+            <button type="button" class="btn btn-warning" id="makeScreenshot">Make Screenshot (.jpg)</button>
         </div>
     </body>
 </html>
