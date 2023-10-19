@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const maskName = document.getElementById("maskName");
     const changeMaskButton = document.getElementById("changeMask");
+    const toggleExperimentalModeButton = document.getElementById("toggleExperimentalMode");
     const video = document.getElementById("video");
     const mediaDevices = navigator.mediaDevices;
 
@@ -9,8 +10,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let model;
 
-    let selectedImage = 0;
-    const images = [
+    let selectedMask = 0;
+    let isExperimentalModeEnabled = false;
+
+    const masks = [
         {
             name: "Emoji",
             src: "img/masks/surprised_emoji.png",
@@ -42,8 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
             sizeOffsetY: 200,
             posOffsetX: 175,
             posOffsetY: 120,
-        }
+        },
     ];
+
+    maskName.innerText = masks[selectedMask].name;
 
     const setUpVideo = () => {
         mediaDevices
@@ -59,13 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const detectFaces = async () => {
         const faces = await model.estimateFaces(video, false);
-        mask(faces);
+        isExperimentalModeEnabled ? experimentalMask(faces) : mask(faces);
     }
 
 
     const mask = (faces) => {
         let image = new Image();
-        image.src = images[selectedImage].src;
+        image.src = masks[selectedMask].src;
         image.onload = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height)
             faces.forEach((face) => {
@@ -73,13 +78,64 @@ document.addEventListener("DOMContentLoaded", () => {
                 let faceHeight = face.bottomRight[1] - face.topLeft[1];
                 ctx.drawImage(
                     image,
-                    face.topLeft[0] - images[selectedImage].posOffsetX,
-                    face.topLeft[1] - images[selectedImage].posOffsetY,
-                    faceWidth + images[selectedImage].sizeOffsetX,
-                    faceHeight + images[selectedImage].sizeOffsetY
+                    face.topLeft[0] - masks[selectedMask].posOffsetX,
+                    face.topLeft[1] - masks[selectedMask].posOffsetY,
+                    faceWidth + masks[selectedMask].sizeOffsetX,
+                    faceHeight + masks[selectedMask].sizeOffsetY
                 );
             });
         }
+    }
+
+    const experimentalMask = (faces) => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        faces.forEach((face) => {
+            let faceWidth = face.bottomRight[0] - face.topLeft[0];
+            let faceHeight = face.bottomRight[1] - face.topLeft[1];
+            let faceX = face.topLeft[0] + (faceWidth / 2);
+            let faceY = face.topLeft[1] + (faceHeight / 2);
+            let leftEyeY = 0;
+            let rightEyeY = 0;
+            drawCircle(faceX, faceY, (faceWidth * 0.5), 0, Math.PI * 2, "yellow");
+            face.landmarks.forEach((landmark, i) => {
+                switch(i) {
+                    case 0:
+                        // left eye
+                        drawCircle(landmark[0], landmark[1], (faceWidth * 0.15), 0, Math.PI * 2, "white");
+                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) + 20, landmark[1] + ((landmark[1] - faceY)) + 40, (faceWidth * 0.05), 0, Math.PI * 2, "black");
+                        leftEyeY = landmark[1];
+                        break;
+                    case 1:
+                        // right eye
+                        drawCircle(landmark[0], landmark[1], (faceWidth * 0.15), 0, Math.PI * 2, "white");
+                        drawCircle(landmark[0] + ((landmark[0] - faceX) * 0.5) - 20, landmark[1] + ((landmark[1] - faceY)) + 40, (faceWidth * 0.05), 0, Math.PI * 2, "black");
+                        rightEyeY = landmark[1];
+                        break;
+                    case 2:
+                        // nose
+                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.05), 0, Math.PI * 2, "red");
+                        break;
+                    case 3:
+                        // mouth
+                        drawCircle(landmark[0], landmark[1] - (faceHeight * 0.1), (faceWidth * 0.3), (rightEyeY - leftEyeY) * 0.02, (rightEyeY - leftEyeY) * 0.02 + Math.PI, "black");
+                        break;
+                    case 4:
+                        // left ear
+                        break;
+                    case 5:
+                        // right ear
+                        break;
+                }
+            });
+        });
+    }
+
+    const drawCircle = (x, y, radius, startAngle, endAngle, color) => {
+        ctx.beginPath();
+        ctx.arc(x, y , radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
     }
 
     video.addEventListener("loadedmetadata", async () => {
@@ -95,15 +151,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     changeMaskButton.addEventListener("click", () => {
-        if (selectedImage < images.length - 1) {
-            selectedImage++;
-        } else {
-            selectedImage = 0;
-        }
-        maskName.innerText = images[selectedImage].name;
+        selectedMask < masks.length - 1 ? selectedMask++ : selectedMask = 0;
+        maskName.innerText = masks[selectedMask].name;
+    });
+
+    toggleExperimentalModeButton.addEventListener("click", () => {
+        isExperimentalModeEnabled = !isExperimentalModeEnabled;
+        changeMaskButton.disabled = isExperimentalModeEnabled;
+        maskName.innerText = isExperimentalModeEnabled ? "Experimental Mode" : masks[selectedMask].name;
     });
 
     setUpVideo();
-    maskName.innerText = images[selectedImage].name;
 });
 
