@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const changeMaskButton = document.getElementById("changeMask");
     const toggleStartStopButton = document.getElementById("toggleStartStop");
     const toggleExperimentalModeButton = document.getElementById("toggleExperimentalMode");
-    const makeScreenshotButton = document.getElementById("makeScreenshot");
+    const takeScreenshotButton = document.getElementById("takeScreenshot");
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
 
@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
         maskName.innerText = isExperimentalModeEnabled ? "Experimental Mode" : masks[selectedMask].name;
     });
 
-    makeScreenshotButton.addEventListener("click", async () => {
+    takeScreenshotButton.addEventListener("click", async () => {
         const screenshotCanvas = document.createElement("canvas");
         screenshotCanvas.width = canvas.width;
         screenshotCanvas.height = canvas.height;
